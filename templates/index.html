@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Produtos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card p-4">
+            <h2 class="text-center mb-4">📋 Lista de Produtos</h2>
+
+            <!-- Mensagens flash -->
+            {% with mensagens = get_flashed_messages(with_categories=true) %}
+                {% if mensagens %}
+                    {% for categoria, msg in mensagens %}
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Botão de adicionar -->
+            <div class="mb-3 text-end">
+                <a href="{{ url_for('addproduct') }}" class="btn btn-success">➕ Adicionar Material</a>
+            </div>
+
+            <!-- Tabela -->
+            <table class="table table-bordered table-hover">
+                <thead class="text-center">
+                    <tr>
+                        <th>Código</th>
+                        <th>Produto</th>
+                        <th>Quantidade</th>
+                        <th>Validade</th>
+                        <th>Preço (R$)</th>
+                        <th>Comentário</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in itens %}
+                        <tr>
+                            <td>{{ item.codigo }}</td>
+                            <td>{{ item.produto }}</td>
+                            <td>{{ item.quantidade_estoque }}</td>
+                            <td>{{ item.validade }}</td>
+                            <td>{{ "%.2f"|format(item.preco) }}</td>
+                            <td>{{ item.comentario }}</td>
+                            <td class="text-center">
+                                <a href="{{ url_for('editproduct', id=item.id) }}" class="btn btn-warning">✏️ Editar</a>
+                                <a href="{{ url_for('removeproduct', id=item.id) }}" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este item?')">🗑 Excluir</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="text-center mt-3">
+                <a href="{{ url_for('login.html') }}" class="btn-secondary" onclick="return confirm('Tem certeza que deseja sair?')"> Sair</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/index.js"></script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+body {
+    font-family: 'poppins', sans-serif;
+    background-color:rgb(33, 42, 77);
+    transition: 0.5s;
+}
+
+    h3 {
+        text-align: center;
+        color: #ffffffe7;
+        transition: 0.5s;
+    }
+
+    .theme {
+        display: flex;
+        justify-content: flex-end;
+        padding: 10px;
+    
+    }
+
+    form {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    input {
+        width: 80%;
+        margin-bottom: 20px;
+        border: none;
+        background-color: #f0f5ffe1;
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 17px;
+        transition: 0.5s;
+        
+    }
+
+    label {
+        color: rgb(255, 255, 255);
+    }
+
+    input:focus {
+        outline: none;
+    }
+
+    form button {
+        width: 40%;
+        border: none;
+        background-color: rgb(163, 127, 80);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        color: rgb(255, 255, 255);
+        transform: 0.5s;
+    }
+
+    form button:hover {
+        cursor: pointer;
+        background-color: rgb(248, 114, 5);
+    }
+
+    form button:focus {
+        outline: none;
+    }

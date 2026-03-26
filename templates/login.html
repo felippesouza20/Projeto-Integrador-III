@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/superhero/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+
+<div class="container mt-5">
+  <div class="col-md-6 offset-md-3">
+    <div class="card border-info shadow-lg">
+      <div class="card-body">
+        <h3 class="text-center text-info mb-4">Sistema de Gestão de Insumos de Higiene e Limpeza Escolar</h3>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+          <div class="mb-3">
+            <label>E-mail</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Senha</label>
+            <input type="password" name="senha" class="form-control" required>
+          </div>
+          <button class="btn btn-success w-100">Entrar</button>
+        </form>
+
+        <div class="text-center mt-3">
+          <a href="{{ url_for('signup') }}" class="btn btn-outline-light">Criar Conta</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
