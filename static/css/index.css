@@ -1,3 +1,5 @@
+/* Corpo da página */
+
 body {
     font-family: 'poppins', sans-serif;
     background-color:rgb(0, 53, 78);
@@ -13,6 +15,8 @@ a {
 text-decoration: none;
 color: white
 }
+
+/* Tabela dos produtos */
 
 table {
     background-color: rgba(0, 30, 70, 0.863);
@@ -56,7 +60,9 @@ input {
     transition: 0.5s;
 }
 
-.btn-success {
+/* Botão de adicionar produto */
+
+.btn btn-success {
     border: none;
     background-color: #66fc03e1;
     border-radius: 10px;
@@ -67,7 +73,9 @@ input {
     top: 40px;
 }
 
-.btn-warning {
+/* Botão de editar produto */
+
+.btn btn-warning {
     border: none;
     background-color: #eeb006e1;
     border-radius: 10px;
@@ -76,7 +84,9 @@ input {
     font-weight: bold;
 }
 
-.btn-danger {
+/* Botão de remover produto */
+
+.btn btn-danger {
     border: none;
     background-color: #ee2506e1;
     border-radius: 10px;
@@ -87,7 +97,9 @@ input {
     top: 40px;
 }
 
-.btn-danger2 {
+/* Botão de logout */
+
+.btn btn-secondary {
     border: none;
     background-color: #ee2506e1;
     border-radius: 10px;
@@ -98,15 +110,4 @@ input {
     left: 120px;
     bottom: 37px;
 
-}
-
-.btn-info {
-    border: none;
-    background-color: #00baf3e1;
-    border-radius: 10px;
-    padding: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    position: relative;
-    bottom: 10px;
 }
