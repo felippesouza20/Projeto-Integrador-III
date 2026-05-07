@@ -3,62 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <title>Lista de Produtos</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/superhero/bootstrap.min.css" rel="stylesheet">
+
+    <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 </head>
+
 <body>
-    <div class="container">
-        <div class="card p-4">
-            <h2 class="text-center mb-4">📋 Lista de Produtos</h2>
 
-            <!-- Mensagens flash -->
-            {% with mensagens = get_flashed_messages(with_categories=true) %}
-                {% if mensagens %}
-                    {% for categoria, msg in mensagens %}
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+<div class="container mt-5">
 
-            <!-- Botão de adicionar -->
-            <div class="mb-3 text-end">
-                <a href="{{ url_for('addproduct') }}" class="btn btn-success">➕ Adicionar Material</a>
-            </div>
+    <div class="card shadow-lg p-4">
 
-            <!-- Tabela -->
-            <table class="table table-bordered table-hover">
-                <thead class="text-center">
-                    <tr>
-                        <th>Código</th>
-                        <th>Produto</th>
-                        <th>Quantidade</th>
-                        <th>Validade</th>
-                        <th>Preço (R$)</th>
-                        <th>Comentário</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in itens %}
-                        <tr>
-                            <td>{{ item.codigo }}</td>
-                            <td>{{ item.produto }}</td>
-                            <td>{{ item.quantidade_estoque }}</td>
-                            <td>{{ item.validade }}</td>
-                            <td>{{ "%.2f"|format(item.preco) }}</td>
-                            <td>{{ item.comentario }}</td>
-                            <td class="text-center">
-                                <a href="{{ url_for('editproduct', id=item.id) }}" class="btn btn-warning">✏️ Editar</a>
-                                <a href="{{ url_for('removeproduct', id=item.id) }}" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este item?')">🗑 Excluir</a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <div class="text-center mt-3">
-                <a href="{{ url_for('login.html') }}" class="btn-secondary" onclick="return confirm('Tem certeza que deseja sair?')"> Sair</a>
-            </div>
+        <h2 class="text-center mb-4">📋 Lista de Produtos</h2>
+
+        <!-- Mensagens flash -->
+        {% with mensagens = get_flashed_messages(with_categories=true) %}
+            {% if mensagens %}
+                {% for categoria, msg in mensagens %}
+                    <div class="alert alert-{{ categoria }}">
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Botões -->
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{{ url_for('addproduct') }}" class="btn btn-success">
+                ➕ Adicionar Material
+            </a>
+
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary"
+               onclick="return confirm('Deseja sair do sistema?')">
+               🚪 Sair
+            </a>
         </div>
+
+        <!-- Tabela -->
+        <table class="table table-bordered table-hover table-striped text-center align-middle">
+
+            <thead class="table-dark">
+                <tr>
+                    <th>Código</th>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Validade</th>
+                    <th>Preço (R$)</th>
+                    <th>Comentário</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in itens %}
+                <tr>
+                    <td>{{ item.codigo }}</td>
+                    <td>{{ item.produto }}</td>
+                    <td>{{ item.quantidade_estoque }}</td>
+                    <td>{{ item.validade }}</td>
+                    <td>{{ "%.2f"|format(item.preco) }}</td>
+                    <td>{{ item.comentario }}</td>
+
+                    <td>
+                        <a href="{{ url_for('editproduct', id=item.id) }}" class="btn btn-warning btn-sm">
+                            ✏️ Editar
+                        </a>
+
+                        <a href="{{ url_for('saida_produto', id=item.id) }}" class="btn btn-info btn-sm">
+                            📤 Saída
+                        </a>
+
+                        <a href="{{ url_for('excluir_item', id=item.id) }}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Tem certeza que deseja excluir este item?')">
+                           🗑 Excluir
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+
     </div>
 
-    <script src="/static/js/index.js"></script>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
+
