@@ -1,50 +1,48 @@
-# app.py
-# -------------------------------------------
-# Sistema de Controle de Estoque com Flask
-# Autor: Seu Nome
-# -------------------------------------------
-
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+from functools import wraps
 
-# -------------------------------------------
-# Configuração da aplicação Flask
-# -------------------------------------------
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///estoque.db'  # Banco de dados SQLite
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///estoque.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'chave-secreta-flask'  # Necessária para sessão e mensagens flash
+app.secret_key = 'chave-secreta-flask'
 
 db = SQLAlchemy(app)
 
-# -------------------------------------------
-# Modelo de Usuário
-# -------------------------------------------
+# ---------------- DECORADOR LOGIN ---------------- #
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'usuario_id' not in session:
+            flash('Faça login primeiro.', 'warning')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# ---------------- MODELOS ---------------- #
+
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     senha = db.Column(db.String(200), nullable=False)
 
-# -------------------------------------------
-# Modelo de Item de Estoque
-# -------------------------------------------
+
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(20), unique=True, nullable=False)
     produto = db.Column(db.String(100), nullable=False)
     quantidade_estoque = db.Column(db.Integer, nullable=False)
+    estoque_minimo = db.Column(db.Integer, default=5)
     validade = db.Column(db.String(20))
     preco = db.Column(db.Float)
+    comentario = db.Column(db.String(255))
+    ativo = db.Column(db.Boolean, default=True)
 
-    comentario = db.Column(db.String(255))  # <-- Adicionado
-
-# -------------------------------------------
-# Modelo: Saída de Material
-# -------------------------------------------
-
-from datetime import datetime
 
 class HistoricoSaida(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -53,31 +51,17 @@ class HistoricoSaida(db.Model):
     responsavel = db.Column(db.String(100), nullable=False)
     data = db.Column(db.DateTime, default=datetime.utcnow)
 
-    item = db.relationship('Item', backref=db.backref('historico_saidas', lazy=True))
+    item = db.relationship('Item', backref='historico_saidas')
 
 
+# ---------------- LOGIN ---------------- #
 
-
-class Saida(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
-    quantidade = db.Column(db.Integer, nullable=False)
-    data_saida = db.Column(db.String(20))
-    responsavel = db.Column(db.String(100))
-
-    item = db.relationship('Item', backref=db.backref('saidas', lazy=True))
-
-
-
-# -------------------------------------------
-# Rota: Página de Login
-# -------------------------------------------
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        senha = request.form['senha']
+        email = request.form.get('email')
+        senha = request.form.get('senha')
 
         usuario = Usuario.query.filter_by(email=email).first()
 
@@ -86,197 +70,197 @@ def login():
             session['usuario_nome'] = usuario.nome
             flash('Login realizado com sucesso!', 'success')
             return redirect(url_for('lista'))
-        else:
-            flash('E-mail ou senha incorretos.', 'danger')
+
+        flash('E-mail ou senha incorretos.', 'danger')
 
     return render_template('login.html')
 
-# -------------------------------------------
-# Rota: Cadastro de Usuário
-# -------------------------------------------
+
+# ---------------- CADASTRO ---------------- #
+
 @app.route('/signup', methods=['GET', 'POST'])
 def registrar():
     if request.method == 'POST':
-        nome = request.form['nome']
-        email = request.form['email']
-        senha = generate_password_hash(request.form['senha'])
+        email = request.form.get('email')
 
         if Usuario.query.filter_by(email=email).first():
             flash('E-mail já cadastrado!', 'warning')
-            return redirect(url_for('signup'))
+            return redirect(url_for('registrar'))
 
-        novo_usuario = Usuario(nome=nome, email=email, senha=senha)
+        novo_usuario = Usuario(
+            nome=request.form.get('nome'),
+            email=email,
+            senha=generate_password_hash(request.form.get('senha'))
+        )
+
         db.session.add(novo_usuario)
         db.session.commit()
+
         flash('Usuário registrado com sucesso!', 'success')
         return redirect(url_for('login'))
 
     return render_template('signup.html')
 
-# -------------------------------------------
-# Rota: Lista de Itens
-# -------------------------------------------
-@app.route('/index')
-def list():
-    if 'usuario_id' not in session:
-        flash('Faça login primeiro.', 'warning')
-        return redirect(url_for('login'))
 
-    itens = Item.query.all()
+# ---------------- LISTA ---------------- #
+
+@app.route('/index')
+@login_required
+def lista():
+    itens = Item.query.filter_by(ativo=True).all()
     return render_template('index.html', itens=itens)
 
-# -------------------------------------------
-# Rota: Adicionar Item
-# -------------------------------------------
+
+# ---------------- ADICIONAR ---------------- #
+
 @app.route('/addproduct', methods=['GET', 'POST'])
+@login_required
 def addproduct():
     if request.method == 'POST':
         try:
-            codigo = request.form['codigo']
-            produto = request.form['produto']
-            quantidade = int(request.form['quantidade'])
-            validade = request.form['validade']
-            preco = float(request.form['preco']) if request.form['preco'] else 0.0
-            comentario = request.form.get('comentario', '')
+            codigo = request.form.get('codigo')
 
-            # Verifica se o código já existe
             if Item.query.filter_by(codigo=codigo).first():
-                flash('⚠️ Já existe um item com esse código!', 'warning')
+                flash('Já existe esse código!', 'warning')
                 return redirect(url_for('addproduct'))
 
             novo_item = Item(
                 codigo=codigo,
-                produto=produto,
-                quantidade_estoque=quantidade,
-                validade=validade,
-                preco=preco,
-                comentario=comentario
+                produto=request.form.get('produto'),
+                quantidade_estoque=int(request.form.get('quantidade', 0)),
+                estoque_minimo=int(request.form.get('estoque_minimo', 5)),
+                validade=request.form.get('validade'),
+                preco=float(request.form.get('preco') or 0),
+                comentario=request.form.get('comentario', '')
             )
 
             db.session.add(novo_item)
             db.session.commit()
-            flash('✅ Material cadastrado com sucesso!', 'success')
+
+            flash('Item cadastrado!', 'success')
             return redirect(url_for('lista'))
 
         except Exception as e:
             db.session.rollback()
-            flash(f'❌ Erro ao cadastrar material: {e}', 'danger')
+            flash(f'Erro ao cadastrar: {e}', 'danger')
 
     return render_template('addproduct.html')
 
 
-
-
-
-# -------------------------------------------
-# Rota: Saída de Material
-# -------------------------------------------
-
+# ---------------- SAÍDA ---------------- #
 
 @app.route('/removeproduct/<int:id>', methods=['GET', 'POST'])
-def removeproduct(id):
-    item = Item.query.get_or_404(id)
-    if request.method == 'POST':
-        quantidade_saida = int(request.form['quantidade'])
-        responsavel = request.form['responsavel']
-
-        if quantidade_saida > item.quantidade_estoque:
-            flash('Quantidade insuficiente no estoque!', 'danger')
-        else:
-            item.quantidade_estoque -= quantidade_saida
-
-            registro = HistoricoSaida(
-                item_id=item.id,
-                quantidade=quantidade_saida,
-                responsavel=responsavel
-            )
-
-            db.session.add(registro)
-            db.session.commit()
-            flash('Saída registrada com sucesso!', 'success')
-        return redirect(url_for('lista'))
-    return render_template('removeproduct.html', item=item)
-
-
-@app.route('/history')
-def history():
-    history = HistoricoSaida.query.order_by(HistoricoSaida.data.desc()).all()
-    return render_template('history.html', history=history)
-
-# -------------------------------------------
-# Rota: Editar Item
-# -------------------------------------------
-@app.route('/editproduct/<int:id>', methods=['GET', 'POST'])
-def editproduct(id):
+@login_required
+def saida_produto(id):
     item = Item.query.get_or_404(id)
 
     if request.method == 'POST':
         try:
-            item.codigo = request.form['codigo']
-            item.produto = request.form['produto']
-            item.quantidade_estoque = int(request.form['quantidade'])
-            item.validade = request.form['validade']
-            item.preco = float(request.form['preco']) if request.form['preco'] else 0.0
-            item.comentario = request.form.get('comentario', '')
+            quantidade = int(request.form.get('quantidade', 0))
+            responsavel = request.form.get('responsavel')
 
-            db.session.commit()
-            flash('✅ Item atualizado com sucesso!', 'success')
-            return redirect(url_for('index'))
+            if quantidade <= 0:
+                flash('Quantidade inválida!', 'danger')
+                return redirect(url_for('lista'))
+
+            if quantidade > item.quantidade_estoque:
+                flash('Estoque insuficiente!', 'danger')
+            else:
+                item.quantidade_estoque -= quantidade
+
+                registro = HistoricoSaida(
+                    item_id=item.id,
+                    quantidade=quantidade,
+                    responsavel=responsavel
+                )
+
+                db.session.add(registro)
+                db.session.commit()
+
+                flash('Saída registrada!', 'success')
+
         except Exception as e:
             db.session.rollback()
-            flash(f'❌ Erro ao atualizar item: {e}', 'danger')
+            flash(f'Erro: {e}', 'danger')
+
+        return redirect(url_for('lista'))
+
+    return render_template('removeproduct.html', item=item)
+
+
+# ---------------- HISTÓRICO ---------------- #
+
+@app.route('/history')
+@login_required
+def history():
+    dados = HistoricoSaida.query.order_by(HistoricoSaida.data.desc()).all()
+    return render_template('history.html', history=dados)
+
+
+# ---------------- EDITAR ---------------- #
+
+@app.route('/editproduct/<int:id>', methods=['GET', 'POST'])
+@login_required
+def editproduct(id):
+    item = Item.query.get_or_404(id)
+
+    if request.method == 'POST':
+        item.codigo = request.form.get('codigo')
+        item.produto = request.form.get('produto')
+        item.quantidade_estoque = int(request.form.get('quantidade', 0))
+        item.estoque_minimo = int(request.form.get('estoque_minimo', 5))
+        item.validade = request.form.get('validade')
+        item.preco = float(request.form.get('preco') or 0)
+        item.comentario = request.form.get('comentario', '')
+
+        db.session.commit()
+        flash('Item atualizado!', 'success')
+        return redirect(url_for('lista'))
 
     return render_template('editproduct.html', item=item)
 
 
+# ---------------- EXCLUIR ---------------- #
 
-# -------------------------------------------
-# Rota: Excluir Item
-# -------------------------------------------
 @app.route('/excluir/<int:id>')
-def removeproduct(id):
-    item = Item.query.get(id)
-    if item:
-        db.session.delete(item)
-        db.session.commit()
-        flash('Item removido com sucesso!', 'info')
-    return redirect(url_for('index'))
+@login_required
+def excluir_item(id):
+    item = Item.query.get_or_404(id)
+    item.ativo = False
+    db.session.commit()
 
-@app.route('/deletar/<int:id>')
-def deletar(id):
-    return removeproduct(id)
+    flash('Item desativado!', 'info')
+    return redirect(url_for('lista'))
 
 
+# ---------------- ESTOQUE BAIXO ---------------- #
 
-# -------------------------------------------
-# Rota: Logout
-# -------------------------------------------
+@app.route('/estoque-baixo')
+@login_required
+def estoque_baixo():
+    itens = Item.query.filter(
+        Item.quantidade_estoque <= Item.estoque_minimo,
+        Item.ativo == True
+    ).all()
+
+    return render_template('index.html', itens=itens)
+
+
+# ---------------- LOGOUT ---------------- #
+
 @app.route('/logout')
 def logout():
     session.clear()
     flash('Logout realizado.', 'info')
     return redirect(url_for('login'))
 
-# -------------------------------------------
-# Criação do Banco de Dados
-# -------------------------------------------
-with app.app_context():
-    db.create_all()
+@app.route('/home')
+def index():
+    return redirect(url_for('lista'))
 
-# -------------------------------------------
-# Inicialização do servidor
-# -------------------------------------------
-if __name__ == '__main__':
-    app.run(debug=True)
+# ---------------- INIT ---------------- #
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
-
-@app.cli.command('reset-db')
-def reset_db():
-    """Apaga e recria o banco de dados."""
-    db.drop_all()
-    db.create_all()
-    print("Banco de dados reiniciado com sucesso!")
