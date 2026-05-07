@@ -3,41 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <title>Login</title>
+
+  <!-- Bootstrap Tema -->
   <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/superhero/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #1c1c1c, #2c3e50);
+    }
+    .card {
+      border-radius: 15px;
+    }
+  </style>
 </head>
-<body class="bg-dark text-light">
 
-<div class="container mt-5">
-  <div class="col-md-6 offset-md-3">
-    <div class="card border-info shadow-lg">
-      <div class="card-body">
-        <h3 class="text-center text-info mb-4">Sistema de Gestão de Insumos de Higiene e Limpeza Escolar</h3>
+<body>
 
+<div class="container d-flex justify-content-center align-items-center vh-100">
+  <div class="col-md-5">
+
+    <div class="card shadow-lg">
+      <div class="card-body p-4">
+
+        <h3 class="text-center text-info mb-3">
+          Sistema de Gestão de Insumos
+        </h3>
+
+        <p class="text-center text-muted mb-4">
+          Higiene e Limpeza Escolar
+        </p>
+
+        <!-- Mensagens -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">{{ message }}</div>
+              <div class="alert alert-{{ category }} text-center">
+                {{ message }}
+              </div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <form method="POST">
+        <!-- Formulário -->
+        <form method="POST" action="{{ url_for('login') }}">
+
           <div class="mb-3">
-            <label>E-mail</label>
-            <input type="email" name="email" class="form-control" required>
+            <label class="form-label">E-mail</label>
+            <input type="email" name="email" class="form-control" placeholder="Digite seu e-mail" required>
           </div>
+
           <div class="mb-3">
-            <label>Senha</label>
-            <input type="password" name="senha" class="form-control" required>
+            <label class="form-label">Senha</label>
+            <input type="password" name="senha" class="form-control" placeholder="Digite sua senha" required>
           </div>
-          <button class="btn btn-success w-100">Entrar</button>
+
+          <button type="submit" class="btn btn-success w-100 mb-2">
+            Entrar
+          </button>
+
         </form>
 
+        <!-- Cadastro -->
         <div class="text-center mt-3">
-          <a href="{{ url_for('signup') }}" class="btn btn-outline-light">Criar Conta</a>
+          <small>Não tem conta?</small><br>
+          <a href="{{ url_for('registrar') }}" class="btn btn-outline-info btn-sm mt-2">
+            Criar Conta
+          </a>
         </div>
+
       </div>
     </div>
+
   </div>
 </div>
 
